@@ -13,7 +13,45 @@ public class Destino {
 	 * @param ciudad
 	 * @param distancia
 	 */
-	public Destino(int codigo, String ciudad, double distancia) {
-
+	private int codigo;
+	private String ciudad;
+	private double distancia;
+	
+	public Destino() {
+	
 	}
+	
+
+	public Destino(int codigo, String ciudad, double distancia) {
+		this.codigo = codigo;
+		this.ciudad = ciudad;
+		this.distancia = distancia;
+	}
+
+
+	public int getCodigo() {
+		return codigo;
+	}
+
+	public void setCodigo(int codigo) {
+		this.codigo = codigo;
+	}
+
+	public String getCiudad() {
+		return ciudad;
+	}
+
+	public void setCiudad(String ciudad) {
+		this.ciudad = ciudad;
+	}
+
+	public double getDistancia() {
+		return distancia;
+	}
+
+	public void setDistancia(double distancia) {
+		this.distancia = distancia;
+	}
+	
+	
 }

@@ -11,6 +11,10 @@ public class GestionDeTraslado {
 	private String numeroDeGestion;
 	private double costoMinimo;
 	private double costoPorKm;
+	private Destino[] destinos; 
+	private Viaje[] viajes;
+	private int countDestinos = 0;
+	private int countViajes = 0;
 
 	/***
 	 * El constructor debe realizar todas las acciones necesarias para garantizar el
@@ -20,9 +24,15 @@ public class GestionDeTraslado {
 	 * @param minimo - Este es el costo minimo de viaje
 	 * @param nombre - Este es el costo por Km
 	 */
+	
 	public GestionDeTraslado(String numeroDeGestion, double costoMinimo, double costoPorKm) {
+		this.numeroDeGestion = numeroDeGestion;
+		this.costoMinimo = costoMinimo;
+		this.costoPorKm = costoPorKm;
+		this.destinos = new Destino[20];
+		this.viajes = new Viaje[50];
 	}
-
+	
 	/***
 	 * Agrega una nuevo destino
 	 * 
@@ -31,8 +41,15 @@ public class GestionDeTraslado {
 	 *         ya se ha ingresado con anterioridad y contemplar esta situacion
 	 */
 	public boolean agregarDestino(Destino destino) {
-
-		return false;
+		if(countDestinos >= destinos.length) return false;
+		
+		for(int i = 0; i < countDestinos; i++) {
+			if (destinos[i].getCodigo() == destino.getCodigo()) return false;
+		}
+		
+		destinos[countDestinos++] = destino;
+		
+		return true;
 
 	}
 
@@ -43,7 +60,9 @@ public class GestionDeTraslado {
 	 * @return Destino (null si no existe)
 	 */
 	public Destino buscarDestino(int codigo) {
-
+		for (int i = 0; i < countDestinos; i++) {
+			if(destinos[i].getCodigo() == codigo) return destinos[i];
+		}
 		return null;
 	}
 
@@ -54,8 +73,13 @@ public class GestionDeTraslado {
 	 * @return true si se pudo agregar o false en caso contrario
 	 */
 	public boolean agregarViaje(Viaje viaje) {
+		if (countViajes >= viajes.length) return false;
 
-		return false;
+		if (buscarDestino(viaje.getDestino().getCodigo()) == null) return false;
+
+		viajes[countViajes++] = viaje;
+
+		return true;
 	}
 
 	/***
@@ -64,7 +88,8 @@ public class GestionDeTraslado {
 	 * @return double
 	 */
 	public double calcularCostoDelViaje(Viaje viaje) {
-		return 0;
+		double costo = Math.max(costoMinimo, viaje.getDestino().getDistancia() * costoPorKm);
+		return costo * (1 - viaje.getPorcentajeDescuento() /100);
 	}
 
 	/****
@@ -73,7 +98,13 @@ public class GestionDeTraslado {
 	 * @return importe total
 	 */
 	public double calcularImporteTotal() {
-		return 0;
+		double total = 0;
+		
+		for(int i = 0; i < countViajes; i++) {
+			total += calcularCostoDelViaje(viajes[i]);
+		}
+		
+		return total;
 	}
 
 	/***
@@ -82,8 +113,8 @@ public class GestionDeTraslado {
 	 * @return importe promedio
 	 */
 	public double calcularImportePromedio() {
-
-		return 0;
+		if (countViajes == 0) return 0;
+		return calcularImporteTotal() / countViajes;
 	}
 
 	/***
@@ -92,8 +123,23 @@ public class GestionDeTraslado {
 	 * @return Viaje[]
 	 */
 	public Viaje[] obtenerViajesOrdenadosPorCostoAscendente() {
-
-		return null;
+		Viaje copia [] = new Viaje[countViajes];
+		for(int i = 0; i < countViajes; i++) {
+			copia[i] = viajes[i];
+		}
+		
+		for(int i = 0; i < copia.length; i++) {
+			for(int j = 0; j < copia.length -1 - i; i++) {
+				double costoActual = calcularCostoDelViaje(copia[j]);
+				double costoSiguiente = calcularCostoDelViaje(copia[j + 1]);
+				if(costoActual > costoSiguiente) {
+					Viaje temp = copia[j];
+					copia[j] = copia[j + 1];
+					copia[j + 1] = temp;
+				}
+			}
+		}
+		return copia;
 	}
 
 	/****
@@ -103,7 +149,20 @@ public class GestionDeTraslado {
 	 * @return Listado de las ventas realizadas
 	 */
 	public String toString() {
-		return "";
+        StringBuilder sb = new StringBuilder();
+        Viaje[] ordenados = obtenerViajesOrdenadosPorCostoAscendente();
+        for (Viaje v : ordenados) {
+            double costo = calcularCostoDelViaje(v);
+            sb.append(String.format("Destino %d - %s | Pasajero: %s | Costo: %.2f\n",
+                v.getDestino().getCodigo(),
+                v.getDestino().getCiudad(),
+                v.getNombre(),
+                costo));
+        }
+        sb.append(String.format("Total: %.2f | Promedio: %.2f",
+            calcularImporteTotal(),
+            calcularImportePromedio()));
+        return sb.toString();
 	}
 
 	/*
@@ -111,7 +170,36 @@ public class GestionDeTraslado {
 	 * destino y el valor del viaje hallado
 	 */
 	public String viajeDeMayorPrecio() {
-
-		return "";
+		if (countViajes == 0) return "No hay viajes";
+		Viaje max = viajes[0];
+		double maxCosto = calcularCostoDelViaje(max);
+        for (int i = 1; i < countViajes; i++) {
+            double c = calcularCostoDelViaje(viajes[i]);
+            if (c > maxCosto) {
+                max = viajes[i];
+                maxCosto = c;
+            }
+        }
+        return String.format("Destino %d (%s) - Pasajero: %s | Costo: %.2f",
+            max.getDestino().getCodigo(),
+            max.getDestino().getCiudad(),
+            max.getNombre(),
+            maxCosto);
 	}
+	
+	
+	public String obtenerDestinosDisponibles() {
+	    if (countDestinos == 0) {
+	        return "No hay destinos registrados aún.";
+	    }
+	    StringBuilder sb = new StringBuilder();
+	    sb.append("Destinos disponibles:\n");
+	    for (int i = 0; i < countDestinos; i++) {
+	        Destino d = destinos[i];
+	        sb.append(String.format("  Código: %d — Ciudad: %s — Distancia: %.1f km%n",
+	                                d.getCodigo(), d.getCiudad(), d.getDistancia()));
+	    }
+	    return sb.toString();
+	}
+
 }

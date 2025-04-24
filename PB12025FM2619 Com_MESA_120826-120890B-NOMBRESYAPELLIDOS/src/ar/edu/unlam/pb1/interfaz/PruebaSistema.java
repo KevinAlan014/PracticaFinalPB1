@@ -16,6 +16,8 @@ public class PruebaSistema {
 		MenuPrincipal opcion = null;
 		double costoMinimo;
 		double costoPorKm;
+		String numeroGestion;
+		boolean numeroGestionValido = false;
 
 		/*
 		 * Para iniciar el sistema, el usuario debe ingresar un número de gestión. Este
@@ -26,50 +28,67 @@ public class PruebaSistema {
 		 * 
 		 */
 
+		do {
+			mostrarMensaje("Ingrese numero de gestion:");
+			numeroGestion = ingresarString();
+			if(numeroGestion.startsWith("#")){
+				numeroGestionValido = true;
+			} else mostrarMensaje("Numero de gestion invalido. Debe comenzar con #");
+		} while(!numeroGestionValido);
+		
+		
 		mostrarMensaje("Ingrese el costo mínimo");
 		costoMinimo = ingresarDecimal();
 
 		mostrarMensaje("Ingrese el costo x km");
 		costoPorKm = ingresarDecimal();
+		
+		GestionDeTraslado gestion = new GestionDeTraslado(numeroGestion, costoMinimo, costoPorKm);
 
 		do {
 			mostrarMenuPrincipal();
 			opcion = ingresarOpcionDelMenuPrincipalValidada();
 			switch (opcion) {
-			case AGREGAR_DESTINO:
+				case AGREGAR_DESTINO:
 
-				/*
-				 * Se debe agregar un nuevo destino para el traslado. Si el destino se agrega
-				 * correctamente, el sistema deberá mostrar el mensaje:
-				 * "Destino agregado correctamente". En caso de error, se deberá mostrar el
-				 * mensaje: "No se pudo agregar el destino".
-				 */
+					/*
+					 * Se debe agregar un nuevo destino para el traslado. Si el destino se agrega
+					 * correctamente, el sistema deberá mostrar el mensaje:
+					 * "Destino agregado correctamente". En caso de error, se deberá mostrar el
+					 * mensaje: "No se pudo agregar el destino".
+					 */
+					if(agregarNuevoDestino(gestion)) {
+						mostrarMensaje("Destino agregado correctamente.");
+					} else mostrarMensaje("No se pudo agregar el destino.");
 
-				break;
-			case AGREGAR_VIAJE:
-				/*
-				 * Se debe agregar un viaje según el traslado determinado. Si la operación se
-				 * realiza con éxito, el sistema deberá mostrar el mensaje:
-				 * "El viaje se agregó correctamente". En caso de error, se deberá mostrar el
-				 * mensaje: "No se pudo agregar el viaje".
-				 */
-
-				break;
-			case VER_RESUMEN:
-				/*
-				 * Una vez asignados los viajes a sus respectivos destinos, se deberá generar y
-				 * mostrar un resumen de la información que se podra consultar en todo momento
-				 * para vidualizar la informacion actual.
-				 */
-				break;
-			case SALIR:
-				mostrarMensaje("Finalizando programa....");
-				break;
-			default:
-				mostrarMensaje("Opción inválida");
+					break;
+				case AGREGAR_VIAJE:
+					/*
+					 * Se debe agregar un viaje según el traslado determinado. Si la operación se
+					 * realiza con éxito, el sistema deberá mostrar el mensaje:
+					 * "El viaje se agregó correctamente". En caso de error, se deberá mostrar el
+					 * mensaje: "No se pudo agregar el viaje".
+					 */
+					if(agregarViaje(gestion)) {
+						mostrarMensaje("El viaje se agregó correctamente");
+					} else mostrarMensaje("No se pudo agregar el viaje");
+					break;
+				case VER_RESUMEN:
+					/*
+					 * Una vez asignados los viajes a sus respectivos destinos, se deberá generar y
+					 * mostrar un resumen de la información que se podra consultar en todo momento
+					 * para vidualizar la informacion actual.
+					 */
+					verResumen(gestion);
+					break;
+				case SALIR:
+					mostrarMensaje("Finalizando programa....");
+					break;
+				default:
+					mostrarMensaje("Opción inválida");
 			}
 			// Definir la cndicion para que el programa funcione correctamente
-		} while (false);
+		} while (opcion != MenuPrincipal.SALIR);
 		mostrarMensaje("Programa terminado");
 		teclado.close();
 
@@ -100,8 +119,17 @@ public class PruebaSistema {
 		 * dentro del rango permitido. Si la opción ingresada no es válida, se
 		 * solicitará nuevamente hasta que se ingrese una opción correcta.
 		 */
-
-		return null;
+		int opcionUser;
+		MenuPrincipal[] opciones = MenuPrincipal.values();
+		int opcionesMenu = opciones.length;
+		
+		do {
+			mostrarMensaje("Ingrese una opcion (1- " + opcionesMenu + "):");
+			opcionUser = ingresarEntero();
+			if(opcionUser < 1 || opcionUser > opcionesMenu) mostrarMensaje("Opcion invalida. Debe Ingresar un numero entre 1 y " + opcionesMenu);
+		} while (opcionUser < 1 || opcionUser > opcionesMenu);
+		
+		return opciones[opcionUser - 1];
 	}
 
 	private static boolean agregarNuevoDestino(GestionDeTraslado actual) {
@@ -109,7 +137,16 @@ public class PruebaSistema {
 		 * Se debe solicitar el código, la ciudad y la distancia para definir el destino
 		 * correspondiente y agregarlo al sistema.
 		 */
-		return false;
+		mostrarMensaje("Ingrese el codigo");
+		int codigo = ingresarEntero();
+		mostrarMensaje("Ingrese la ciudad");
+		String ciudad = ingresarString();
+		mostrarMensaje("Ingrese la distancia");
+		double distancia = ingresarDecimal();
+		
+		Destino nuevoDestino = new Destino(codigo, ciudad, distancia);
+		
+		return actual.agregarDestino(nuevoDestino);
 	}
 
 	private static int ingresarEntero() {
@@ -130,8 +167,34 @@ public class PruebaSistema {
 		 * Ingrese el porcentaje de descuento (0~100) y agregue el nuevo viaje
 		 * solicitado.
 		 */
+		 
+		System.out.println(actual.obtenerDestinosDisponibles());
+	    mostrarMensaje("Código de destino para el viaje (-1 para cancelar):");
+	    int codigo = ingresarEntero();
+	    if (codigo == -1) return false;
 
-		return false;
+	    Destino destino = actual.buscarDestino(codigo);
+	    if (destino == null) {
+	        mostrarMensaje("Error. El destino " + codigo + " no existe.");
+	        return false;  // cortamos aquí
+	    }
+
+	    mostrarMensaje("Nombre del pasajero:");
+	    String nombre = ingresarString();
+
+	    mostrarMensaje("Ingrese el porcentaje de descuento (0–100):");
+	    double descuento = ingresarDecimal();
+	    if (descuento < 0 || descuento > 100) {
+	        mostrarMensaje("Descuento inválido, se usará 0%.");
+	        descuento = 0;
+	    }
+
+	    int idRandom = (int) (Math.random() * (99-7) + 7);
+
+	    // Ahora sí creamos el viaje ya con todos los datos validados
+	    Viaje nuevoViaje = new Viaje(destino, nombre, descuento, idRandom);
+
+	    return actual.agregarViaje(nuevoViaje);
 
 	}
 
@@ -143,5 +206,10 @@ public class PruebaSistema {
 		 * El viaje con el mayor precio. 
 		 * El importe total acumulado.
 		 */
+        System.out.println("------- RESUMEN -------");
+        System.out.println(actual.toString());
+        System.out.println("Viaje de mayor precio:");
+        System.out.println(actual.viajeDeMayorPrecio());
+        System.out.println("-----------------------");
 	}
 }
